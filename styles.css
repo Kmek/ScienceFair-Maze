@@ -1,0 +1,79 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+
+body{
+    background-color: black;
+}
+
+#main-page{
+    background-color: #3d3d3d;
+    width: 675px;
+    min-height: 510px;
+    margin: 0 auto;
+    text-align: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.row {
+    width: 100%;
+    height: 45px;
+    text-align: center;
+}
+
+h1 {
+    font-size: 30px;
+    margin-bottom: 10px;
+    margin-left: 200px;
+    margin-right: 50px;
+    color: white;
+    float: left;
+}
+
+input {
+    margin-bottom: 10px;
+}
+
+canvas {
+    background-color: black;
+}
+
+button {
+    color: white;
+    height: 30px;
+    width: 70px;
+    font-size: 16px;
+    margin: 5px 10px;
+    border-radius: 5px;
+    border: none;
+}
+#btnOpen {
+    background-color: white;
+    color: black;
+}
+#btnClose {
+    background-color: black;
+}
+#btnStartP {
+    background-color: Red;
+}
+#btnEndP {
+    background-color: Blue;
+}
+#btnRun {
+    background-color: grey;
+    margin-left: 30px;
+    float: left;
+}
+#btnEdit {
+    background-color: grey;
+    float: left;
+}
+#infoSpan {
+    color: white;
+    margin-top: 10px;
+    margin-left: 35px;
+    float:left;
+}
