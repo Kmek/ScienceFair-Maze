@@ -58,14 +58,14 @@ const draw = {
         draw.rect(x, y, blockSize, blockSize, "blue");
         draw.text(x+(blockSize/2), y+22, "white", "E");
     },
-    short: function(x, y) {
-        draw.rect(x, y, blockSize, blockSize, "green");
-    },
-    long: function(x, y) {
-        draw.rect(x, y, blockSize, blockSize, "orange");
-    },
     visited: function(x, y) {
-        draw.circle(x+(blockSize/2), y+(blockSize/2), 2, "#00bcbc");
+        draw.rect(x, y, blockSize, blockSize, "#00bcbc");
+    },
+    checked: function(x, y) {
+        draw.rect(x, y, blockSize, blockSize, "#FF8F00");
+    },
+    shortest: function(x, y) {
+        draw.rect(x, y, blockSize, blockSize, "green");
     },
     char: function(x, y) {
         draw.circle(x+(blockSize/2), y+(blockSize/2), 7, "purple");
@@ -119,7 +119,6 @@ class Block {
         this.x = co(blockX);
         this.y = co(blockY);
         this.style = style;
-        this.visited = false;
         this.path = [];
         // Uncaculated values are -1, an unobtainable number
         this.gCost = -1;
@@ -147,14 +146,14 @@ class Block {
             endCo[0] = coToBlock(this.x);
             endCo[1] = coToBlock(this.y);
         }
-        else if (this.style === "short") {
-            draw.short(this.x, this.y);
-        }
-        else if (this.style === "long") {
-            draw.long(this.x, this.y);
-        }
-        if (this.visited === true) {
+        else if (this.style === "visited") {
             draw.visited(this.x, this.y);
+        }
+        else if (this.style === "checked") {
+            draw.checked(this.x, this.y);
+        }
+        else if (this.style === "shortest") {
+            draw.shortest(this.x, this.y);
         }
     }
     
@@ -168,9 +167,12 @@ class Block {
         // Saves the block coordinates in an array
         if (this.gCost < 0) {
             // getGCost must only be called when the robot is on the block
-            this.path = checker.currentPath.slice(0);
-            this.path.push(this.blockX);
-            this.path.push(this.blockY);
+            if (this.path.length === 0) {
+                this.path = checker.center().path.slice(0);
+                this.path.push(this.blockX);
+                this.path.push(this.blockY);
+            }
+            
             this.gCost = Math.floor((this.path.length - 1) / 2);
         }
         return (this.gCost);
@@ -244,8 +246,6 @@ class Char {
     constructor (blockX, blockY) {
         this.blockX = blockX;
         this.blockY = blockY;
-        // Keeps track of current path coordinates 
-        this.currentPath = [blockX, blockY];
         // Keeps track of the currently open-end paths in an array (not visited yet)
         this.openPaths = [];
         // Blocks hold their own shortest path from the start, so robot can pick up from any block
@@ -257,6 +257,14 @@ class Char {
         this.center().erase();
         this.center().draw();
         draw.char(co(this.blockX), co(this.blockY));
+        if (this.blockX === endCo[0] && this.blockY === endCo[1]) {
+            console.log("at end!");
+            for (let i = 3; i < (this.center().path.length - 2); i+= 2) {
+                let tempX = i - 1;
+                let tempY = i;
+                updateBlock(this.center().path[tempX], this.center().path[tempY], "shortest");
+            }
+        }
     }
     
     // Moves the char itself
@@ -277,55 +285,41 @@ class Char {
         this.draw();
     }
     
-    // Returns the given block relative to the char's location
-    up() {
-        return(blocks[indexFor(this.blockX, this.blockY-1)]);
-    }
-    down() {
-        return(blocks[indexFor(this.blockX, this.blockY+1)]);
-    }
-    left() {
-        return(blocks[indexFor(this.blockX-1, this.blockY)]);
-    }
-    right() {
-        return(blocks[indexFor(this.blockX+1, this.blockY)]);
-    }
+    // Returns the current block's info
     center() {
         return(blocks[indexFor(this.blockX, this.blockY)]);
+    }
+    
+    // 0=Right 1=Down 2=Left 3=Up
+    around(direct) {
+        return (blocks[indexFor(this.blockX+near[0][direct], this.blockY+near[1][direct])]);
+    }
+    // 0=Right 1=Down 2=Left 3=Up
+    isMoveable(direct) {
+        if (isInGrid(this.blockX+near[0][direct], this.blockY+near[1][direct])) {
+            if (this.around(direct).style !== "closed" && this.around(direct).style !== "visited" && this.around(direct).style !== "start") {
+                return true;
+            }
+        }
+        return false;
     }
     
     // Checks four blocks around, sets block values, picks one to move forward
     // If a dead end is found, robot resumes search from the array of open ends
     checkAround() {
-        // Mark the current block as visited
-        this.center().visited = true;
         // Uses an array to find & remember the lowest f-cost
         let fCosts = [];
-        let lowest = -1;
+        let lowest = (this.center().getFCost() * 3);    // unobtainable
         // Direction is where the robot will move next
         let direction = -1;
         
         // First find the lowest fCost
-        if (isInGrid(this.blockX+1, this.blockY) && this.right().style !== "closed" && this.right().visited === false) {
-            fCosts[0] = this.right().getFCost();
-            lowest = fCosts[0];
-        }
-        if (isInGrid(this.blockX, this.blockY+1) && this.down().style !== "closed" && this.down().visited === false) {
-            fCosts[1] = this.down().getFCost();
-            if (fCosts[1] < lowest) {
-                lowest = fCosts[1];
-            }
-        }
-        if (isInGrid(this.blockX-1, this.blockY) && this.left().style !== "closed" && this.left().visited === false) {
-            fCosts[2] = this.left().getFCost();
-            if (fCosts[2] < lowest) {
-                lowest = fCosts[2];
-            }
-        }
-        if (isInGrid(this.blockX, this.blockY-1) && this.up().style !== "closed" && this.up().visited === false) {
-            fCosts[3] = this.up().getFCost();
-            if (fCosts[3] < lowest) {
-                lowest = fCosts[3];
+        for (let i = 0; i < 4; i++) {
+            if (this.isMoveable(i)) {
+                fCosts[i] = this.around(i).getFCost();
+                if (fCosts[i] < lowest) {
+                    lowest = fCosts[i];
+                }
             }
         }
         
@@ -336,20 +330,15 @@ class Char {
         else {
             // Uses coordinates saved in an array for this section
             for (let i = 0; i < 4; i++) {
-                if (blocks[indexFor(this.blockX+near[0][i], this.blockY+near[1][i])].visited === false) {
-                    if (fCosts[i] === lowest) {
-                        updateBlock(this.blockX+near[0][i], this.blockY+near[1][i], "short");
-                        // Need to find direction in here
-                        if (direction < 0) {
-                            direction = i;
+                if (this.isMoveable(i)) {
+                    if (fCosts[i] === lowest && (direction < 0)) {
+                        if (this.around(i).style !== "end") {
+                            updateBlock(this.blockX+near[0][i], this.blockY+near[1][i], "visited");
                         }
-                        else {
-                            this.openPaths.push(this.blockX+near[0][i]);
-                            this.openPaths.push(this.blockY+near[1][i]);
-                        }
+                        direction = i;
                     }
                     else {
-                        updateBlock(this.blockX+near[0][i], this.blockY+near[1][i], "long");
+                        updateBlock(this.blockX+near[0][i], this.blockY+near[1][i], "checked");
                         this.openPaths.push(this.blockX+near[0][i]);
                         this.openPaths.push(this.blockY+near[1][i]);
                     }
@@ -358,7 +347,7 @@ class Char {
             }
             this.center().draw();
             switch (direction) {
-                case 0:
+                case 0: 
                     checker.moveRight();
                     break;
                 case 1:
@@ -382,6 +371,7 @@ document.onkeydown = function (e) {
     switch (e.key) {
         case 'c':
             checker.checkAround();
+            //console.log(checker.blockX, checker.blockY);
             break;
     }
 };
