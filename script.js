@@ -224,8 +224,43 @@ function populateBlocks() {
 }
 // intial draw for map
 populateBlocks();
-updateBlock(3, 3, "start");
-updateBlock(7, 5, "end");
+/*
+// tricky map 1
+updateBlock(2, 11, "start");
+updateBlock(17, 8, "end");
+
+updateBlock(5, 8, "closed");
+updateBlock(5, 7, "closed");
+updateBlock(5, 6, "closed");
+updateBlock(5, 5, "closed");
+
+updateBlock(11, 8, "closed");
+updateBlock(11, 9, "closed");
+updateBlock(11, 10, "closed");
+updateBlock(11, 11, "closed");
+
+updateBlock(15, 8, "closed");
+updateBlock(15, 7, "closed");
+updateBlock(15, 6, "closed");
+updateBlock(15, 5, "closed");*/
+
+// tricky map 2
+updateBlock(4, 10, "start");
+updateBlock(16, 5, "end");
+
+updateBlock(5, 10, "closed");
+updateBlock(5, 9, "closed");
+updateBlock(4, 8, "closed");
+updateBlock(3, 8, "closed");
+updateBlock(2, 9, "closed");
+updateBlock(2, 10, "closed");
+updateBlock(2, 11, "closed");
+updateBlock(2, 12, "closed");
+
+updateBlock(14, 4, "closed");
+updateBlock(14, 5, "closed");
+updateBlock(15, 6, "closed");
+updateBlock(16, 7, "closed");
 
 // returns the style of the block
 function getStyle(blockX, blockY) {
@@ -248,9 +283,8 @@ class Char {
         this.blockY = blockY;
         // Keeps track of the currently open-end paths in an array (not visited yet)
         this.openPaths = [];
-        // Blocks hold their own shortest path from the start, so robot can pick up from any block
-        // When one route doesn't pan out, the robot picks one from the start so there's a chance of backtracking
-        // use splice(index, 1) to remove element from the middle of an array
+        this.fCosts = [];
+        this.fCostsLowest = 100;
     }
     
     draw() {
@@ -259,7 +293,7 @@ class Char {
         draw.char(co(this.blockX), co(this.blockY));
         if (this.blockX === endCo[0] && this.blockY === endCo[1]) {
             console.log("at end!");
-            for (let i = 3; i < (this.center().path.length - 2); i+= 2) {
+            for (let i = 1; i < (this.center().path.length - 2); i+= 2) {
                 let tempX = i - 1;
                 let tempY = i;
                 updateBlock(this.center().path[tempX], this.center().path[tempY], "shortest");
@@ -267,6 +301,7 @@ class Char {
         }
     }
     
+    /*
     // Moves the char itself
     moveUp() {
         this.blockY--;
@@ -284,12 +319,12 @@ class Char {
         this.blockX++;
         this.draw();
     }
+    */
     
     // Returns the current block's info
     center() {
         return(blocks[indexFor(this.blockX, this.blockY)]);
     }
-    
     // 0=Right 1=Down 2=Left 3=Up
     around(direct) {
         return (blocks[indexFor(this.blockX+near[0][direct], this.blockY+near[1][direct])]);
@@ -304,49 +339,167 @@ class Char {
         return false;
     }
     
+    addToOpen(direct) {
+        if (this.fCosts.length === 0) {
+            this.fCosts[0] = this.around(direct).hCost;
+            this.openPaths[0] = this.around(direct).blockX;
+            this.openPaths[1] = this.around(direct).blockY;
+        }
+        else {
+            // Find index for fCost
+            let desiredCost = this.around(direct).hCost;
+            for (let i = 0; i < this.fCosts.length; i++) {
+                if (this.fCosts[i] >= desiredCost) {
+                    this.fCosts.splice(i, 0, desiredCost);
+                    this.openPaths.splice((i*2), 0, this.around(direct).blockX);
+                    this.openPaths.splice((i*2)+1, 0, this.around(direct).blockY);
+                    break;
+                }
+                if (i === (this.fCosts.length - 1)) {
+                    this.fCosts.splice(i, 0, desiredCost);
+                    this.openPaths.splice((i*2), 0, this.around(direct).blockX);
+                    this.openPaths.splice((i*2)+1, 0, this.around(direct).blockY);
+                    break;
+                }
+            }
+        }
+        //console.log("paths "+this.openPaths);
+        this.fCostsLowest = this.fCosts[0];
+    }
+    
+    // Adds open blocks to openPaths array before moving
+    lightCheck() {
+        for (let i = 0; i < 4; i++) {
+            if (this.isMoveable(i) && this.around(i).style !== "checked") {
+                    this.around(i).getFCost();
+                    if (this.around(i).style !== "end") {
+                        updateBlock(this.blockX+near[0][i], this.blockY+near[1][i], "checked");
+                    }
+                    this.addToOpen(i);
+            }
+        }
+    }
+    
+    // Moves to the lowest block in the openPaths array
+    checkAndMoveSimplified(){
+        if (!(this.blockX === endCo[0] && this.blockY === endCo[1])) {
+            // Mark blocks before moving
+            if (this.center().style !== "start") {
+                updateBlock(this.blockX, this.blockY, "visited");
+            }
+            this.lightCheck();
+            this.center().draw();
+            // Change checker xy blocks
+            this.blockX = this.openPaths[0];
+            this.blockY = this.openPaths[1];
+            //console.log(this.blockX, this.blockY);
+            // Remove block from open path arrays
+            this.fCosts.splice(0, 1);
+            this.openPaths.splice(0, 2);
+            this.fCostsLowest = this.fCosts[0];
+            // Move
+            if (this.center().style !== "end") {
+                updateBlock(this.blockX, this.blockY, "visited");
+            }
+            this.draw();
+        }
+    }
+    
+    /*
     // Checks four blocks around, sets block values, picks one to move forward
     // If a dead end is found, robot resumes search from the array of open ends
     checkAround() {
-        // Uses an array to find & remember the lowest f-cost
-        let fCosts = [];
-        let lowest = (this.center().getFCost() * 3);    // unobtainable
-        // Direction is where the robot will move next
-        let direction = -1;
-        
-        // First find the lowest fCost
-        for (let i = 0; i < 4; i++) {
-            if (this.isMoveable(i)) {
-                fCosts[i] = this.around(i).getFCost();
-                if (fCosts[i] < lowest) {
-                    lowest = fCosts[i];
-                }
-            }
+        // If fCost is getting too high, pick a diff open path
+        if (this.center().fCost > this.fCostsLowest) {
+            // Mark blocks before moving
+            updateBlock(this.blockX, this.blockY, "visited");
+            //this.lightCheck();
+            this.center().draw();
+            // Change checker xy blocks
+            this.blockX = this.openPaths[0];
+            this.blockY = this.openPaths[1];
+            //console.log(this.blockX, this.blockY);
+            // Remove block from open paths
+            this.fCosts.splice(0, 1);
+            this.openPaths.splice(0, 2);
+            this.fCostsLowest = this.fCosts[0];
+            // Move
+            this.draw();
+            // is not marking new checked tile as visited, revisits
         }
         
-        // Will not change anything if no lowest fCost (dead end was found)
-        if (lowest === -1) {
-            // Find new block from open array, change path
-        }
-        else {
-            // Uses coordinates saved in an array for this section
+        // if not at the end, check around and move the checker on block
+        if (!(this.blockX === endCo[0] && this.blockY === endCo[1])) {
+            // Uses an array to find & remember the lowest f-cost
+            let fCosts = [];
+            let lowest = (this.center().getFCost() * 3);    // unobtainable
+            
+            // First find the lowest fCost
             for (let i = 0; i < 4; i++) {
                 if (this.isMoveable(i)) {
-                    if (fCosts[i] === lowest && (direction < 0)) {
-                        if (this.around(i).style !== "end") {
-                            updateBlock(this.blockX+near[0][i], this.blockY+near[1][i], "visited");
-                        }
-                        direction = i;
-                    }
-                    else {
-                        updateBlock(this.blockX+near[0][i], this.blockY+near[1][i], "checked");
-                        this.openPaths.push(this.blockX+near[0][i]);
-                        this.openPaths.push(this.blockY+near[1][i]);
+                    //this.around(i).getFCost();
+                    fCosts[i] = this.around(i).getFCost();
+                    if (fCosts[i] < lowest) {
+                        lowest = fCosts[i];
                     }
                 }
-            // then need to move robot, add new block to path, add other blocks to open array
             }
+            
+            // Will not change anything if no lowest fCost (dead end was found)
+            if (lowest === -1) {
+                // Find new block from open array, change path
+                console.log("dead end!");
+            }
+            else {
+                // Direction is where the robot will move next
+                let direction = [];
+                
+                // Finds direction in here
+                for (let i = 0; i < 4; i++) {
+                    if (this.isMoveable(i)) {
+                        if (fCosts[i] === lowest) {
+                            if (this.around(i).style !== "end") {
+                                updateBlock(this.blockX+near[0][i], this.blockY+near[1][i], "visited");
+                            }
+                            direction.push(i);
+                        }
+                        else {
+                            updateBlock(this.blockX+near[0][i], this.blockY+near[1][i], "checked");
+                            this.addToOpen(i);
+                        }
+                    }
+                }
+                
+                // Determine the lower HCost between the two directions if needed
+                if (direction.length > 1) {
+                    if (this.around(direction[0]).hCost < this.around(direction[1]).hCost) {
+                        // Mark second block as checked
+                        updateBlock(this.blockX+near[0][direction[1]], this.blockY+near[1][direction[1]], "checked");
+                        this.addToOpen(direction[1]);
+                    }
+                    else {
+                        // Mark first block as checked
+                        updateBlock(this.blockX+near[0][direction[0]], this.blockY+near[1][direction[0]], "checked");
+                        this.addToOpen(direction[0]);
+                        // Mark direction as second block
+                        direction[0] = direction[1];
+                    }
+                }
+                return (direction[0]);
+            }
+        }
+    }
+    
+    // Move direction seperate from check
+    move(direct) {
+        if (direct === -1) {
+            // Pick from openPaths
+            console.log("dead end need new path");
+        }
+        else {
+            // Erase block and move checker
             this.center().draw();
-            switch (direction) {
+            switch (direct) {
                 case 0: 
                     checker.moveRight();
                     break;
@@ -360,8 +513,10 @@ class Char {
                     checker.moveUp();
                     break;
             }
+            //console.log("bot "+this.blockX, this.blockY);
         }
     }
+    */
 }
 // Declared before later use
 var checker;
@@ -370,7 +525,8 @@ var checker;
 document.onkeydown = function (e) {
     switch (e.key) {
         case 'c':
-            checker.checkAround();
+            checker.checkAndMoveSimplified();
+            //checker.checkAround();
             //console.log(checker.blockX, checker.blockY);
             break;
     }
