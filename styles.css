@@ -71,9 +71,25 @@ button {
     background-color: grey;
     float: left;
 }
+
 #infoSpan {
     color: white;
     margin-top: 10px;
     margin-left: 35px;
     float:left;
+}
+
+#speedSlider{
+    float: left;
+    margin-left: 40px;
+    margin-top: 10px;
+}
+#speedLabel {
+    color: white;
+    margin-top: 10px;
+    margin-left: 10px;
+    float: left;
+}
+#speedSlider {
+    color: white;
 }

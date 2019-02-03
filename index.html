@@ -14,13 +14,14 @@
             <button id="btnClose" onClick="stylus.closed()">Closed</button>
             <button id="btnStartP" onClick="stylus.start()">Start</button>
             <button id="btnEndP" onClick="stylus.end()">End</button>
-            <!--<input id="speed-slider" type="range" min="10" value="40" max="50">-->
         </div>
         <canvas width="649px" height="415px" id="myCanvas"></canvas> 
         
         <div class="row">
             <button id="btnRun" onClick="run()">Run</button>
             <button id="btnEdit" onClick="edit()">Edit</button>
+            <input id="speedSlider" type="range" min="100" value="500" max="1000">
+            <span id="speedLabel">Speed: <span id="speedSpan">500</span></span>
         </div>
         <div class="row">
             <span id="infoSpan">No selection</span>
