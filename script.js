@@ -285,8 +285,7 @@ class Char {
         this.blockY = blockY;
         // Keeps track of the currently open-end paths in an array (not visited yet)
         this.openPaths = [];
-        this.hCosts = [];
-        this.hCostsLowest = 100;
+        this.fCosts = [];
         this.checking;
     }
     
@@ -294,17 +293,6 @@ class Char {
         this.center().erase();
         this.center().draw();
         draw.char(co(this.blockX), co(this.blockY));
-        if (this.blockX === endCo[0] && this.blockY === endCo[1]) {
-            // Stops calling the check function
-            this.stopChecking;
-            console.log("at end!");
-            // Highlights the path
-            for (let i = 1; i < (this.center().path.length - 2); i+= 2) {
-                let tempX = i - 1;
-                let tempY = i;
-                updateBlock(this.center().path[tempX], this.center().path[tempY], "shortest");
-            }
-        }
     }
     
     // Returns the current block
@@ -327,30 +315,31 @@ class Char {
     
     // Adds and organizes a block into the openPaths array 
     addToOpen(direct) {
-        if (this.hCosts.length === 0) {
-            this.hCosts[0] = this.around(direct).hCost;
+        if (this.fCosts.length === 0) {
+            this.fCosts[0] = this.around(direct).fCost;
             this.openPaths[0] = this.around(direct).blockX;
             this.openPaths[1] = this.around(direct).blockY;
         }
         else {
             // Find index for hCost
-            let desiredCost = this.around(direct).hCost;
-            for (let i = 0; i < this.hCosts.length; i++) {
-                if (this.hCosts[i] >= desiredCost) {
-                    this.hCosts.splice(i, 0, desiredCost);
+            let desiredCost = this.around(direct).fCost;
+            for (let i = 0; i < this.fCosts.length; i++) {
+                // Found the organized middle
+                if (this.fCosts[i] >= desiredCost) {
+                    this.fCosts.splice(i, 0, desiredCost);
                     this.openPaths.splice((i*2), 0, this.around(direct).blockX);
                     this.openPaths.splice((i*2)+1, 0, this.around(direct).blockY);
                     break;
                 }
-                if (i === (this.hCosts.length)) {
-                    this.hCosts.splice(i, 0, desiredCost);
-                    this.openPaths.splice((i*2), 0, this.around(direct).blockX);
-                    this.openPaths.splice((i*2)+1, 0, this.around(direct).blockY);
+                // If at end
+                if (i === (this.fCosts.length - 1)) {
+                    this.fCosts.splice(this.fCosts.length, 0, desiredCost);
+                    this.openPaths.splice(this.openPaths.length, 0, this.around(direct).blockX);
+                    this.openPaths.splice(this.openPaths.length, 0, this.around(direct).blockY);
                     break;
                 }
             }
         }
-        this.hCostsLowest = this.hCosts[0];
     }
     
     // Adds open blocks to openPaths array before moving
@@ -358,27 +347,32 @@ class Char {
         for (let i = 0; i < 4; i++) {
             if (this.isMoveable(i) && this.around(i).style !== "checked") {
                 this.around(i).getFCost();
+                this.addToOpen(i);
                 if (this.around(i).style !== "end") {
                     updateBlock(this.blockX+near[0][i], this.blockY+near[1][i], "checked");
                 }
-                this.addToOpen(i);
             }
         }
     }
     
-    multipleChecks(hCost) {
-        // lightchecks the blocks with the given hCost
-        // needs to move the robot each time so the gCost is correct
-    }
-    
-    // Somehow needs to lightcheck two options if block gCosts are tied
-    // Also need a way to check if a shorter path has been found, than the checked block stored
-    // & How to overwrite that block in the openPaths array
-    
     // Moves to the lowest block in the openPaths array
     checkAndMoveSimplified(){
-        console.log("checking");
-        if (!(this.blockX === endCo[0] && this.blockY === endCo[1])) {
+        // If at a dead end
+        if (this.openPaths.length === 0 && this.center().style !== "start") {
+            print("All possible paths explored, no solution found");
+            this.stopChecking();
+        }
+        else if (this.blockX === endCo[0] && this.blockY === endCo[1]) {
+            print("Found the end!");
+            this.stopChecking;
+            // Highlights the path
+            for (let i = 1; i < (this.center().path.length - 2); i+= 2) {
+                let tempX = i - 1;
+                let tempY = i;
+                updateBlock(this.center().path[tempX], this.center().path[tempY], "shortest");
+            }
+        }
+        else {
             // Mark blocks before moving
             this.lightCheck();
             this.center().draw();
@@ -386,15 +380,15 @@ class Char {
             this.blockX = this.openPaths[0];
             this.blockY = this.openPaths[1];
             // Remove block from open path arrays
-            this.hCosts.splice(0, 1);
+            this.fCosts.splice(0, 1);
             this.openPaths.splice(0, 2);
-            this.hCostsLowest = this.hCosts[0];
             // Move
             if (this.center().style !== "end") {
                 updateBlock(this.blockX, this.blockY, "visited");
             }
             this.draw();
         }
+        //console.log(checker.blockX, checker.blockY, this.openPaths);
     }
     
     // Starting and stopping the interval is contained inside the class
@@ -405,6 +399,7 @@ class Char {
         clearInterval(this.checking);
     }
 }
+
 // Declared before later use
 var checker;
 
@@ -413,7 +408,10 @@ document.onkeydown = function (e) {
     switch (e.key) {
         case 'c':
             checker.checkAndMoveSimplified();
-            //checker.checkAround();
+            //console.log(checker.blockX, checker.blockY);
+            break;
+        case 's':
+            checker.startChecking();
             //console.log(checker.blockX, checker.blockY);
             break;
     }
@@ -510,7 +508,7 @@ function run() {
         // Makes a new checker at the starting block
         checker = new Char(startCo[0], startCo[1]);
         checker.draw();
-        checker.startChecking();
+        //checker.startChecking();
     }
 }
 // Restart styling, reset long and short styles to open
@@ -530,6 +528,7 @@ function edit() {
             blocks[i].draw();
         }
     }
+    blocks[indexFor(endCo[0], endCo[1])].path = [];
     // Remove checker
     checker.center().draw();
 }
@@ -559,4 +558,8 @@ function printStyle(blockX, blockY) {
     if (blocks[indexFor(blockX, blockY)].hCost !== -1) {
         span.textContent += (", H-Cost = " + blocks[indexFor(blockX, blockY)].hCost);
     }
+}
+
+function print(text) {
+    span.textContent = text;
 }
