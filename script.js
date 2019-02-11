@@ -15,7 +15,7 @@ var ctx = canvas.getContext("2d");
 ****************************************/
 
 // Size of blocks
-const blockSize = 25;
+const blockSize = 24;
 
 // For functions drawing on the canvas
 const draw = {
@@ -96,11 +96,11 @@ function indexFor(blockX, blockY){
 }
 // These calculate x and y co from grid coordinates
 function co(blockNum) {
-    return (blockNum * (blockSize+1));
+    return (blockNum * (blockSize+2));
 }
 // Turn coordinate into block
 function coToBlock(co) {
-    return (Math.floor(co / (blockSize+1)));
+    return (Math.floor(co / (blockSize+2)));
 }
 
 // Check if block x y is inside the grid
@@ -225,7 +225,7 @@ function populateBlocks() {
 }
 // intial draw for map
 populateBlocks();
-/*
+
 // tricky map 1
 updateBlock(2, 11, "start");
 updateBlock(17, 8, "end");
@@ -243,10 +243,10 @@ updateBlock(11, 11, "closed");
 updateBlock(15, 8, "closed");
 updateBlock(15, 7, "closed");
 updateBlock(15, 6, "closed");
-updateBlock(15, 5, "closed");*/
+updateBlock(15, 5, "closed");
 
-// tricky map 2
-updateBlock(4, 10, "start");
+// Snail map
+/*updateBlock(4, 10, "start");
 updateBlock(16, 5, "end");
 
 updateBlock(5, 10, "closed");
@@ -261,7 +261,7 @@ updateBlock(2, 12, "closed");
 updateBlock(14, 4, "closed");
 updateBlock(14, 5, "closed");
 updateBlock(15, 6, "closed");
-updateBlock(16, 7, "closed");
+updateBlock(16, 7, "closed");*/
 
 // returns the style of the block
 function getStyle(blockX, blockY) {
@@ -359,18 +359,22 @@ class Char {
     checkAndMoveSimplified(){
         // If at a dead end
         if (this.openPaths.length === 0 && this.center().style !== "start") {
-            print("All possible paths explored, no solution found");
-            this.stopChecking();
+            // One last check
+            this.lightCheck();
+            if (this.openPaths.length === 0) {
+                print("All possible paths explored, no solution found");
+                this.stopChecking();
+            }
         }
         else if (this.blockX === endCo[0] && this.blockY === endCo[1]) {
             print("Found the end!");
-            this.stopChecking;
             // Highlights the path
             for (let i = 1; i < (this.center().path.length - 2); i+= 2) {
                 let tempX = i - 1;
                 let tempY = i;
                 updateBlock(this.center().path[tempX], this.center().path[tempY], "shortest");
             }
+            this.stopChecking();
         }
         else {
             // Mark blocks before moving
@@ -482,7 +486,7 @@ canvas.addEventListener('click', function(e) {
  * Block-type Buttons
 ****************************************/
 
-// 
+// Stylus class for drawing
 var stylus = {
     stat: "closed",
     styling: true,
@@ -503,24 +507,32 @@ var stylus = {
 
 // Start robot
 function run() {
+    if (stylus.styling === false) {
+        checker.stopChecking();
+        edit();
+    }
+    print("Running");
     stylus.styling = false;
     if (start === true && end === true) {
         // Makes a new checker at the starting block
         checker = new Char(startCo[0], startCo[1]);
         checker.draw();
-        //checker.startChecking();
+        checker.startChecking();
     }
 }
 // Restart styling, reset long and short styles to open
 function edit() {
+    print("Stopping");
     //Stops checking
     checker.stopChecking();
     // Enables styling
     stylus.styling = true;
     // Resets all blocks except start, end, and closed blocks
     for(let i = 0; i < blocks.length; i++) {
-        if (blocks[i].style === "checked" || blocks[i].style === "visited" || blocks[i].style === "shortest") {
-            blocks[i].style = "open";
+        if (blocks[i].style === "checked" || blocks[i].style === "visited" || blocks[i].style === "shortest" || blocks[i].style === "end") {
+            if (blocks[i].style !== "end") {
+                blocks[i].style = "open";
+            }
             blocks[i].gCost = -1;
             blocks[i].hCost = -1;
             blocks[i].fCost = -1;
@@ -528,7 +540,6 @@ function edit() {
             blocks[i].draw();
         }
     }
-    blocks[indexFor(endCo[0], endCo[1])].path = [];
     // Remove checker
     checker.center().draw();
 }
