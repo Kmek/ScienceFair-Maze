@@ -24,4 +24,7 @@ Links up all of our Files together
 // Libraries for movement (drive, mg ejector, mg litfer)
 #include "lib_drive.c"
 
+// For science fair
+#include "lib_pathfinding.c"
+
 #endif

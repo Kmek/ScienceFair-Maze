@@ -51,7 +51,11 @@ bool isRobotBlocked(short motor, int expectedMinimumRPM) {
 /**********************/
 
 void driveMotors(short LPower, short RPower) {
-	motor[leftDrive] = LPower;
+	if (LPower == 0) {
+			motor[leftDrive] = LPower;
+	} else {
+	motor[leftDrive] = LPower + 3;
+	}
 	motor[rightDrive] = RPower;
 }
 
@@ -213,7 +217,7 @@ void driveTurnRight(short power, int driveTime, BrakeType bType) {
 1 inch = 392 / 12.568 = 31.2 ticks per inch.
 *******************************************/
 long encoderTicksFromInches(float inches) {
-	float encoderTicks = inches * 31.2;
+	float encoderTicks = inches * 61.43;//31.2;
 	return (long) encoderTicks;
 }
 /*******************************************
@@ -294,7 +298,7 @@ void driveForwardInches(float inches, int power, long timeOut, BrakeType bType)
 {
 	resetMotorEncoder(getDriveMotor());  //Always set to zero
 
-	float encoderTicks = inches * 31.2;
+	float encoderTicks = inches * 61.43; //31.2;
 	CTimer T = getFreeTimer();
 
 	driveForwardPower(power);
