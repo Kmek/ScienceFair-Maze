@@ -6,9 +6,9 @@
 enum tileType {OPEN, CLOSED, CHECKED, VISITED, START, END};
 enum Direction {NORTH, SOUTH, EAST, WEST};
 
-Direction robotDir = NORTH;
+Direction robotDir = SOUTH;
 
-tileType tiles[][] = {
+tileType tiles[6][6] = {
 	{OPEN, OPEN, OPEN, OPEN, OPEN, OPEN},
 	{OPEN, OPEN, OPEN, OPEN, OPEN, OPEN},
 	{OPEN, OPEN, OPEN, OPEN, OPEN, OPEN},
@@ -51,8 +51,13 @@ int tilesPathCoords[36][73] = {
 };
 
 int startCoord[] = {0,0};
-int currCoord[]  = {0, 0};
+int currCoord[]  = {0,0};
 int endCoord[] = {5,5};
+
+void init() {
+	tilesGCost[startCoord[X_COORD]][startCoord[Y_COORD]] = 0;
+	tiles[startCoord[X_COORD]][startCoord[Y_COORD]] = VISITED;
+}
 
 int checkedCount = 0;
 bool breakBool = false;
@@ -86,14 +91,14 @@ int getGCost(int xCoord, int yCoord) {
 
 	if (tilesGCost[xCoord][yCoord] == -1) {
 		int tile = indexFor(xCoord, yCoord);
+		gCost = tilesGCost[currCoord[X_COORD]][currCoord[Y_COORD]] + 1;
 
 		// memcpy won't work and robotc is bad, so here's another for loop
 
 		// copying the last path to the current tile's path one coordinate half at a time
 		// there ought to be (last tile's gCost * 2) values in the array
 		for (int i = 0; i < tilesGCost[currCoord[X_COORD]][currCoord[Y_COORD]] * 2; i++) {
-			//tempArray[i] = tilesPathCoords[indexFor(xCoord, yCoord)][i];
-		tilesPathCoords[tile][i] = tilesPathCoords[indexFor(xCoord, yCoord)][i];
+			tilesPathCoords[tile][i] = tilesPathCoords[indexFor(currCoord[X_COORD], currCoord[Y_COORD])][i];
 		}
 
 		if (tilesPathCoords[indexFor(xCoord, yCoord)][0] == -1) {
@@ -102,14 +107,14 @@ int getGCost(int xCoord, int yCoord) {
 			tilesPathCoords[tile][1] = yCoord;
 		} else {
 			//getpathindex(take the gcost of the current tile + 1)
-			tilesPathCoords[tile][getPathIndex(X_COORD, tilesGCost[currCoord[X_COORD]][currCoord[Y_COORD]])] = xCoord;
-			tilesPathCoords[tile][getPathIndex(Y_COORD, tilesGCost[currCoord[X_COORD]][currCoord[Y_COORD]])] = yCoord;
+			tilesPathCoords[tile][getPathIndex(X_COORD, gCost)] = xCoord;
+			tilesPathCoords[tile][getPathIndex(Y_COORD, gCost)] = yCoord;
 			//tempArray[getPathIndex(X_COORD, tilesGCost[currCoord[X_COORD]][currCoord[Y_COORD]])] = xCoord;
 			//tempArray[getPathIndex(Y_COORD, tilesGCost[currCoord[X_COORD]][currCoord[Y_COORD]])] = yCoord;
 		}
 
 		// the previous tile's gcost + 1
-		gCost = tilesGCost[currCoord[X_COORD]][currCoord[Y_COORD]] + 1; //gcost of the prev + 1; //floor((sizeof(tilesPathCoords[indexFor(xCoord, yCoord)]) - 1) / 2);
+		 //gcost of the prev + 1; //floor((sizeof(tilesPathCoords[indexFor(xCoord, yCoord)]) - 1) / 2);
 		tilesGCost[xCoord][yCoord] = gCost;
 
 		//tilesPathCoords[indexFor(xCoord, yCoord)] = tempArray;
@@ -161,20 +166,33 @@ float getFCost(int xCoord, int yCoord) {
 bool isMoveable(int direction, int xCoord, int yCoord) {
 	// checks that its in the grid
 	if (isInGrid(xCoord + nearCo[X_COORD][direction], yCoord + nearCo[Y_COORD][direction])) {
+		//writeDebugStreamLine("IsInGrid!");
 		// checks that the tile is OPEN
-		if ((tiles[xCoord + nearCo[X_COORD][direction]][yCoord + nearCo[Y_COORD][direction]] == OPEN)
+		if (tiles[xCoord + nearCo[X_COORD][direction]][yCoord + nearCo[Y_COORD][direction]] == OPEN) {
+			//writeDebugStreamLine("IS OPEN!");
+
+			//writeDebugStreamLine("XCoord %d, YCoord %d, near xCoord %d, near yCoord %d", xCoord, yCoord, xCoord + nearCo[X_COORD][direction], yCoord + nearCo[Y_COORD][direction]);
+
 			// AND that the coords are not the start coords
-			&& (xCoord + nearCo[X_COORD][direction] != startCoord[X_COORD] && yCoord + nearCo[Y_COORD][direction] != startCoord[Y_COORD])) {
+			if (xCoord + nearCo[X_COORD][direction] == startCoord[X_COORD] && yCoord + nearCo[Y_COORD][direction] == startCoord[Y_COORD]) {
+				//writeDebugStreamLine("is start coord!");
+				return false;
+		} else {
 			return true;
-		}
+		}}
 	}
 return false;
 }
 
 void lightCheck(int xCoord, int yCoord) {
+	//writeDebugStreamLine(" LightCheck");
 	for (int i = 0; i < 4; i++) {
+		//writeDebugStreamLine("In for loop");
 		if (isMoveable(i, xCoord, yCoord)) {
-			getFCost(xCoord + nearCo[X_COORD][i], yCoord + nearCo[Y_COORD][i]);
+			//writeDebugStreamLine("isMoveable!");
+			float fcost = getFCost(xCoord + nearCo[X_COORD][i], yCoord + nearCo[Y_COORD][i]);
+			//writeDebugStreamLine("f cost: %f", fcost);
+
 			tiles[xCoord + nearCo[X_COORD][i]][yCoord + nearCo[Y_COORD][i]] = CHECKED;
 			checkedCount++;
 		}
@@ -187,33 +205,39 @@ void lowestFCost() {
 
 	for (int i = 0; i < 6; i++) {
 		for (int k = 0; k < 6; k++) {
-			if (tiles[i][k] == CHECKED && tilesFCost[i][k] != -1) {
-				if (tilesFCost[i][k] < lowestFCost) {
-					index[0] = i;
-					index[1] = k;
+			if (tiles[i][k] == CHECKED) {
+				//writeDebugStreamLine("got into this if statement");
+				if (lowestFCost == -1 || tilesFCost[i][k] < lowestFCost) {
+					index[X_COORD] = i;
+					index[Y_COORD] = k;
 					lowestFCost = tilesFCost[i][k];
 				}
 			}
 		}
 	}
 	// sets the currCoord to the lowest f cost
-	currCoord = index;
+	currCoord[X_COORD] = index[X_COORD];
+	currCoord[Y_COORD] = index[Y_COORD];
+
+	tiles[currCoord[X_COORD]][currCoord[Y_COORD]] = VISITED;
+
+	writeDebugStreamLine("Visited Index of x: %d    Index of y: %d", index[X_COORD], index[Y_COORD]);
 }
 
 void turnAround() {
-	driveForwardTurn(TURN_LEFT, 180, 100, 2000, APPLY_BRAKE);
+	driveForwardTurn(TURN_LEFT, 180, 50, 5000, APPLY_BRAKE);
 }
 
 void turnLeft() {
-	driveForwardTurn(TURN_LEFT, 90, 100, 2000, APPLY_BRAKE);
+	driveForwardTurn(TURN_LEFT, 85, 50, 5000, APPLY_BRAKE);
 }
 
 void turnRight() {
-	driveForwardTurn(TURN_RIGHT, 90, 100, 2000, APPLY_BRAKE);
+	driveForwardTurn(TURN_RIGHT, 85, 50, 5000, APPLY_BRAKE);
 }
 
 void driveOneTile() {
-	driveForwardInches(10, 100, 2000, APPLY_BRAKE);
+	driveForwardInches(9, 25, 5000, NO_BRAKE);
 }
 
 void moveRobot() {
@@ -223,7 +247,12 @@ void moveRobot() {
 	int robotX = startCoord[X_COORD];
 	int robotY = startCoord[Y_COORD];
 
-	for (int i = 0; i < lastGCost; i++) {
+	for (int m = 1; m < lastGCost; m++) {
+		writeDebugStreamLine("coord set: %d %d", tilesPathCoords[tile][getPathIndex(X_COORD, m)], tilesPathCoords[tile][getPathIndex(Y_COORD, m)]);
+		m++;
+		}
+
+	for (int i = 1; i < lastGCost; i++) {
 		int nextXCoord = tilesPathCoords[tile][getPathIndex(X_COORD, i)];
 		int nextYCoord = tilesPathCoords[tile][getPathIndex(Y_COORD, i)];
 
@@ -278,18 +307,21 @@ void moveRobot() {
 				turnAround();
 			}
 
+			wait1Msec(250);
 			robotDir = WEST;
 			driveOneTile();
+			wait1Msec(250);
 		}
 
 		robotX = nextXCoord;
 		robotY = nextYCoord;
-		i++;
 	}
 }
 
 // hmm
 void checkAndMoveSimplified() {
+
+	writeDebugStreamLine("CheckAndMoveSimplified");
 	if (checkedCount == 0 && currCoord != startCoord) {
 		// one last check
 		lightCheck(currCoord[X_COORD], currCoord[Y_COORD]);
@@ -297,7 +329,7 @@ void checkAndMoveSimplified() {
 		if (checkedCount == 0) {
 			breakBool = true;
 		}
-	} else if (currCoord == endCoord) {
+	} else if (currCoord[X_COORD] == endCoord[X_COORD] && currCoord[Y_COORD] == endCoord[Y_COORD]) {
 		int tile = indexFor(currCoord[X_COORD], currCoord[Y_COORD]);
 
 		tilesPathCoords[tile][getPathIndex(X_COORD, tilesGCost[currCoord[X_COORD]][currCoord[Y_COORD]])] = currCoord[X_COORD];
@@ -312,7 +344,14 @@ void checkAndMoveSimplified() {
 		lowestFCost();
 
 		if (currCoord != endCoord) {
+			writeDebugStreamLine("Visited Index of x: %d    Index of y: %d", currCoord[X_COORD], currCoord[Y_COORD]);
 			tiles[currCoord[X_COORD]][currCoord[Y_COORD]] = VISITED;
 		}
+	}
+}
+
+void test() {
+	if (isMoveable(3, 0, 0)) {
+		driveForwardInches(100, 30, 5000, APPLY_BRAKE);
 	}
 }

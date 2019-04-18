@@ -51,12 +51,12 @@ bool isRobotBlocked(short motor, int expectedMinimumRPM) {
 /**********************/
 
 void driveMotors(short LPower, short RPower) {
-	if (LPower == 0) {
-			motor[leftDrive] = LPower;
-	} else {
-	motor[leftDrive] = LPower + 3;
-	}
-	motor[rightDrive] = RPower;
+	//if (RPower == 0) {
+			motor[rightDrive] = RPower;
+	//} else {
+	//motor[rightDrive] = RPower - 7;
+	//}
+	motor[leftDrive] = LPower;
 }
 
 void driveForwardPower(int power) {
@@ -68,11 +68,11 @@ void driveBackupPower(int power) {
 }
 
 void drivePowerRightTurn(int power) {
-	driveMotors(POS(power),NEG(power));
+	driveMotors(POS(power),NEG(power));// + 7));
 }
 
 void drivePowerLeftTurn(int power) {
-	driveMotors(NEG(power), POS(power));
+	driveMotors(NEG(power), POS(power)); // + 7));
 }
 
 /**********************/
@@ -94,9 +94,9 @@ void drive(DriveDirection dir, TurnDirection turn, int power) {
 	switch(turn) {
 	case NO_TURN:
 		if (dir == FORWARD)
-			driveMotors(POS(power),POS(power));
+			driveMotors(POS(power),POS(power)); // + 7));
 		else
-			driveMotors(NEG(power),NEG(power));
+			driveMotors(NEG(power),NEG(power)); // + 7));
 		break;
 
 	case TURN_LEFT:
@@ -119,7 +119,7 @@ void drive(DriveDirection dir, TurnDirection turn, int power) {
 //Brake Functions
 /**********************/
 void driveEngageBrake(){
-	short brakePower = 10; //10
+	short brakePower = 5; //10
 	int   brakeMS = 200; //200
 	short l = motor[rightDrive];
 	short r = motor[leftDrive];
@@ -249,7 +249,7 @@ void driveForwardTurn(TurnDirection bTurnDirection, float degrees, int power, lo
 	resetMotorEncoder(leftDrive);
 	resetMotorEncoder(port3);  //Always set to zero
 
-	float encoderTicks = degrees * 3.8;  //((31.2 * 7.55) / 90.0);  // ok a guess that it takes 4 wheel rotations to make a 90 degree turn.
+	float encoderTicks = degrees * 3.2; //3.8;  //((31.2 * 7.55) / 90.0);  // ok a guess that it takes 4 wheel rotations to make a 90 degree turn.
 	//encoderTicks = 360.0;
 	CTimer T = getFreeTimer();
 

@@ -12,19 +12,23 @@
 task main()
 {
 	startTask(driveTask);
-	// HAVE TO DISABLE DRIVE TASK TO LET PATHFINDER DO ITS THING
-	enableDriveTask();
 	disableDriveTask();
 
+	// initialization function for the pathfinding code
+	init();
+
+	bool pathfindingMode = false;
 	while (true) {
 
-		/*if (pincerCloseButton()) {
+		if (pincerCloseButton()) {
 			disableDriveTask();
-			driveForwardInches(100, 30, 5000, APPLY_BRAKE);
-			enableDriveTask();
-		}*/
+
+			//turnLeft();
+			//turnRight();
+		}
 
 		checkAndMoveSimplified();
+
 		if (breakBool) {
 			break;
 		}
