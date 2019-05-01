@@ -293,6 +293,15 @@ void driveForwardTurn(TurnDirection bTurnDirection, float degrees, int power, lo
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
 
+bool isOnRightLine() {
+	return (SensorValue(rightLineTracker) > 1500);
+}
+
+bool isOnLeftLine() {
+	return (SensorValue(leftLineTracker) > 1500);
+}
+
+
 
 void driveForwardInches(float inches, int power, long timeOut, BrakeType bType)
 {
@@ -301,13 +310,25 @@ void driveForwardInches(float inches, int power, long timeOut, BrakeType bType)
 	float encoderTicks = inches * 61.43; //31.2;
 	CTimer T = getFreeTimer();
 
-	driveForwardPower(power);
-	while ((time(T) <  timeOut) && encoderLessThanTarget(getDriveMotor(), encoderTicks))
-		wait1Msec(10);
+	short lPower = power;
+	short rPower = power;
 
-	if (bType == APPLY_BRAKE) {
-		driveEngageBrake();
+	while ((time(T) <  timeOut) && encoderLessThanTarget(getDriveMotor(), encoderTicks)) {
+		driveMotors(lPower, rPower);
+
+		if (isOnRightLine()) {
+			rPower = power + 5;
+		} else {
+			rPower = power;
+		}
+
+		if (isOnLeftLine()) {
+			lPower = power + 5;
+		} else {
+			lPower = power;
+		}
 	}
+
 	driveStop();
 	freeTimer(T);
 }

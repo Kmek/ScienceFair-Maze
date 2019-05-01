@@ -241,7 +241,7 @@ void driveOneTile() {
 }
 
 void moveRobot() {
-	int lastGCost = tilesGCost[currCoord[X_COORD]][currCoord[Y_COORD]];
+	int lastGCost = tilesGCost[currCoord[X_COORD]][currCoord[Y_COORD]] + 1; // + 1 for the last tile
 	int tile = indexFor(currCoord[X_COORD], currCoord[Y_COORD]);
 
 	int robotX = startCoord[X_COORD];
