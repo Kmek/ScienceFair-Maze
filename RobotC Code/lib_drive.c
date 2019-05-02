@@ -165,6 +165,9 @@ void driveForwardInches(float inches, int power, long timeOut, BrakeType bType)
 	short lPower = power;
 	short rPower = power;
 
+	resetMotorEncoder(rightDrive);
+	resetMotorEncoder(leftDrive);
+
 	// reset motor encoder to properly drive
 	resetMotorEncoder(getDriveMotor());  //Always set to zero
 
@@ -180,14 +183,14 @@ void driveForwardInches(float inches, int power, long timeOut, BrakeType bType)
 
 		// if we are over the right line, increase right power
 		if (isOnRightLine()) {
-			rPower = power + 5;
+			rPower = power + 10;
 		} else {
 			rPower = power;
 		}
 
 		// if we are over the left line, increase left power
 		if (isOnLeftLine()) {
-			lPower = power + 5;
+			lPower = power + 10;
 		} else {
 			lPower = power;
 		}

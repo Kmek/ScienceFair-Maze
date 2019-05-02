@@ -220,7 +220,10 @@ void turnRight() {
 }
 
 void driveOneTile() {
-	driveForwardInches(8.9, 25, 1350, APPLY_BRAKE);
+	driveForwardInches(9.2, 25, 1150, APPLY_BRAKE);
+	driveBackupPower(10);
+ 	wait1Msec(150);
+	driveStop();
 }
 
 void moveRobot() {
