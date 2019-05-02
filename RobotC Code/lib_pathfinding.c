@@ -50,9 +50,9 @@ int tilesPathCoords[36][73] = {
 	{-1}, {-1}, {-1}, {-1}, {-1}, {-1}
 };
 
-int startCoord[] = {0,0};
-int currCoord[]  = {0,0};
-int endCoord[] = {3,3};
+int startCoord[] = {3,0};
+int currCoord[]  = {3,0};
+int endCoord[] = {2,4};
 
 void init() {
 	tilesGCost[startCoord[X_COORD]][startCoord[Y_COORD]] = 0;
@@ -203,7 +203,7 @@ void turnAround() {
 
 void turnLeft() {
 	drivePowerLeftTurn(50);
-	wait1Msec(250);
+	wait1Msec(200);
 	drivePowerRightTurn(5);
 	wait1Msec(100);
 	driveStop();
@@ -212,7 +212,7 @@ void turnLeft() {
 
 void turnRight() {
 	drivePowerRightTurn(50);
-	wait1Msec(250);
+	wait1Msec(200); //180
  	drivePowerLeftTurn(5);
  	wait1Msec(100);
 	driveStop();
