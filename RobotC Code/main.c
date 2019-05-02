@@ -19,16 +19,7 @@ task main()
 	// initialization function for the pathfinding code
 	init();
 
-	bool pathfindingMode = false;
 	while (true) {
-
-		if (pincerCloseButton()) {
-			disableDriveTask();
-			driveOneTile();
-			//turnLeft();
-			//turnRight();
-		}
-
 		checkAndMoveSimplified();
 
 		if (breakBool) {

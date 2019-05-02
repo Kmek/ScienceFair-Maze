@@ -74,13 +74,13 @@ bool isEncoderWorking(tMotor m) {
 // returns false encoder greater = the target and encoder is working
 //*******************************************************/
 bool encoderLessThanTarget(tMotor theMotor, long theTarget) {
-
+	return (getEncoderValue(theMotor) <= theTarget); /*
 	if (isEncoderWorking(theMotor))
 	{
 		return (getEncoderValue(theMotor) <= theTarget);
 	}
 	else
-		return false;
+		return false;*/
 }
 
 bool encoderGreaterThanTarget(tMotor theMotor, long theTarget) {
