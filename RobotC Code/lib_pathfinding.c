@@ -50,13 +50,18 @@ int tilesPathCoords[36][73] = {
 	{-1}, {-1}, {-1}, {-1}, {-1}, {-1}
 };
 
-int startCoord[] = {3,0};
-int currCoord[]  = {3,0};
-int endCoord[] = {2,4};
+int startCoord[] = {0,0};
+int currCoord[]  = {0,0};
+int endCoord[] = {5,0};
 
 void init() {
 	tilesGCost[startCoord[X_COORD]][startCoord[Y_COORD]] = 0;
 	tiles[startCoord[X_COORD]][startCoord[Y_COORD]] = VISITED;
+
+	// closed tiles
+
+	tiles[1][0] = CLOSED;
+	tiles[2][1] = CLOSED;
 }
 
 int checkedCount = 0;
@@ -105,13 +110,13 @@ int getGCost(int xCoord, int yCoord) {
 			//replace the coord
 			tilesPathCoords[tile][0] = xCoord;
 			tilesPathCoords[tile][1] = yCoord;
-		} else {
+			} else {
 			tilesPathCoords[tile][getPathIndex(X_COORD, gCost)] = xCoord;
 			tilesPathCoords[tile][getPathIndex(Y_COORD, gCost)] = yCoord;
 		}
 		tilesGCost[xCoord][yCoord] = gCost;
 
-	} else {
+		} else {
 		gCost = tilesGCost[xCoord][yCoord];
 	}
 
@@ -127,7 +132,7 @@ float getHCost(int xCoord, int yCoord) {
 
 		hCost = round(sqrt(a+b) * 100) / 100;
 		tilesHCost[xCoord][yCoord] = hCost;
-	} else {
+		} else {
 		hCost = tilesHCost[xCoord][yCoord];
 	}
 
@@ -157,11 +162,11 @@ bool isMoveable(int direction, int xCoord, int yCoord) {
 			// AND that the coords are not the start coords
 			if (xCoord + nearCo[X_COORD][direction] == startCoord[X_COORD] && yCoord + nearCo[Y_COORD][direction] == startCoord[Y_COORD]) {
 				return false;
-		} else {
-			return true;
+				} else {
+				return true;
 		}}
 	}
-return false;
+	return false;
 }
 
 void lightCheck(int xCoord, int yCoord) {
@@ -213,8 +218,8 @@ void turnLeft() {
 void turnRight() {
 	drivePowerRightTurn(50);
 	wait1Msec(200); //180
- 	drivePowerLeftTurn(5);
- 	wait1Msec(100);
+	drivePowerLeftTurn(5);
+	wait1Msec(100);
 	driveStop();
 	//driveForwardTurn(TURN_RIGHT, 10, 50, 400, APPLY_BRAKE);
 }
@@ -222,7 +227,7 @@ void turnRight() {
 void driveOneTile() {
 	driveForwardInches(9.2, 25, 1150, APPLY_BRAKE);
 	driveBackupPower(10);
- 	wait1Msec(150);
+	wait1Msec(150);
 	driveStop();
 }
 
@@ -243,9 +248,9 @@ void moveRobot() {
 			// Must move to face North
 			if (robotDir == SOUTH) {
 				turnAround();
-			} else if (robotDir == EAST) {
+				} else if (robotDir == EAST) {
 				turnLeft();
-			} else if (robotDir == WEST) {
+				} else if (robotDir == WEST) {
 				turnRight();
 			}
 
@@ -256,9 +261,9 @@ void moveRobot() {
 			// face south!
 			if (robotDir == NORTH) {
 				turnAround();
-			} else if (robotDir == EAST) {
+				} else if (robotDir == EAST) {
 				turnRight();
-			} else if (robotDir == WEST) {
+				} else if (robotDir == WEST) {
 				turnLeft();
 			}
 
@@ -268,9 +273,9 @@ void moveRobot() {
 			// face east!
 			if (robotDir == NORTH) {
 				turnRight();
-			} else if (robotDir == SOUTH) {
+				} else if (robotDir == SOUTH) {
 				turnLeft();
-			} else if (robotDir == WEST) {
+				} else if (robotDir == WEST) {
 				turnAround();
 			}
 
@@ -280,9 +285,9 @@ void moveRobot() {
 			// face east!
 			if (robotDir == NORTH) {
 				turnLeft();
-			} else if (robotDir == SOUTH) {
+				} else if (robotDir == SOUTH) {
 				turnRight();
-			} else if (robotDir == EAST) {
+				} else if (robotDir == EAST) {
 				turnAround();
 			}
 			robotDir = WEST;
@@ -307,7 +312,7 @@ void checkAndMoveSimplified() {
 		if (checkedCount == 0) {
 			breakBool = true;
 		}
-	} else if (currCoord[X_COORD] == endCoord[X_COORD] && currCoord[Y_COORD] == endCoord[Y_COORD]) {
+		} else if (currCoord[X_COORD] == endCoord[X_COORD] && currCoord[Y_COORD] == endCoord[Y_COORD]) {
 		int tile = indexFor(currCoord[X_COORD], currCoord[Y_COORD]);
 
 		tilesPathCoords[tile][getPathIndex(X_COORD, tilesGCost[currCoord[X_COORD]][currCoord[Y_COORD]])] = currCoord[X_COORD];
@@ -316,7 +321,7 @@ void checkAndMoveSimplified() {
 		//yay done!
 		moveRobot();
 		breakBool = true;
-	} else {
+		} else {
 		lightCheck(currCoord[X_COORD], currCoord[Y_COORD]);
 
 		lowestFCost();
