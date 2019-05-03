@@ -60,7 +60,7 @@ void init() {
 
 	// closed tiles
 
-	tiles[1][0] = CLOSED;
+	//tiles[1][0] = CLOSED;
 	tiles[2][1] = CLOSED;
 }
 
